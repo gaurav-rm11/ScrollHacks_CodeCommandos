@@ -2,13 +2,21 @@
 import { cn } from "@/lib/utils";
 import { motion, MotionValue } from "framer-motion";
 import React from "react";
+import { WalletContext } from "@/context/wallet";
+import { useContext } from "react";
+import { useRouter } from "next/navigation";
+import { BrowserProvider,JsonRpcSigner } from "ethers";
 
 const transition = {
   duration: 0,
   ease: "linear",
 };
 
+
+
 export const GoogleGeminiEffect = ({
+
+
   pathLengths,
   title = "Audit Your Smart Contracts",
   description,
@@ -19,6 +27,48 @@ export const GoogleGeminiEffect = ({
   description?: string;
   className?: string;
 }) => {
+
+  const {
+    isConnected,
+    setIsConnected,
+    userAddress,
+    setUserAddress,
+    signer,
+    setSigner,
+  } = useContext(WalletContext);
+
+  const router = useRouter()
+
+
+  const connectWallet = async (): Promise<void> => {
+    if (!window.ethereum) {
+      alert("Please Install MetaMask To Continue");
+      return;
+    }
+
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = (await provider.getSigner()) as JsonRpcSigner;
+      setSigner(signer);
+      const accounts = await provider.send("eth_requestAccounts", []);
+      setIsConnected(true);
+      setUserAddress(accounts[0]);
+      alert("MetaMask Wallet Connected");
+      router.push('/dashboard')
+      const network = await provider.getNetwork();
+      const chainID = network.chainId;
+      const polygonNetworkId = "80002";
+
+      if (chainID !== polygonNetworkId) {
+        alert("Switch to Polygon network to continue");
+
+        
+      }
+      
+    } catch (error) {
+      console.log("Connection error", error);
+    }
+  };
   return (
     <div className={cn("sticky top-80", className)}>
       <p className="text-lg md:text-7xl font-normal pb-4 text-center bg-clip-text text-transparent bg-gradient-to-b from-neutral-100 to-neutral-300">
@@ -30,7 +80,7 @@ export const GoogleGeminiEffect = ({
         works!`}
       </p>
       <div className="w-full h-[890px] -top-60 md:-top-40  flex items-center justify-center bg-red-transparent absolute ">
-        <button className="font-bold bg-white rounded-full md:px-4 md:py-2 px-2 py-1 md:mt-24 mt-8 z-30 md:text-base text-black text-xs  w-fit mx-auto ">
+        <button onClick={connectWallet} className="font-bold bg-white rounded-full md:px-4 md:py-2 px-2 py-1 md:mt-24 mt-8 z-30 md:text-base text-black text-xs  w-fit mx-auto ">
             Connect Wallet
         </button>
       </div>
